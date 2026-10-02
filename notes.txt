@@ -1,0 +1,149 @@
+# Exercise 1 — Glossier Scraper Notes
+
+## Data collected
+
+* India market: 321 product-variant rows.
+* US market: 353 product-variant rows.
+* Each row includes product name, product/variant ID, product URL, image URL, price, description, variant, and scrape timestamp.
+
+## Validation
+
+* No duplicate product IDs were found in either CSV.
+* Product names, URLs, images, prices, and variant fields have no missing values.
+* India CSV: 2 rows have missing descriptions.
+* US CSV: 31 rows have missing descriptions.
+
+## Missing descriptions
+
+The scraper attempts to retrieve descriptions from the product JSON data, the product page's visible description section, and Product JSON-LD metadata. Some products do not expose a description in these sources, so those values remain blank rather than being fabricated.
+
+## Market selection
+
+In `exercise1/scraper.py`, set `MARKET = "in"` for India or `MARKET = "us"` for the United States.
+
+## Run
+
+Activate the virtual environment, then run:
+
+`python exercise1/scraper.py`
+
+The CSV is saved in the `output` folder for the selected market.
+
+---
+
+# Exercise 2 — Cellarbrations Whisky Scraper
+
+## Data collected
+
+* Category: Cellarbrations whisky.
+* Page 1: 30 products.
+* Page 2: 27 products.
+* Total: 57 unique products.
+* Output file: `output/cellarbrations_whisky.csv`.
+
+Each row contains the product name, product ID, product URL, image URL, price, scrape timestamp, description, measuring unit, and unit quantity.
+
+## Validation
+
+The generated CSV was validated with the following results:
+
+* 57 products exported.
+* 0 duplicate product IDs.
+* No missing values in any of the 9 output columns.
+* Pack sizes were successfully extracted for all 57 products.
+
+## Measuring units
+
+The scraper extracts the quantity and measurement unit from product names.
+
+Examples:
+
+* `700mL` → measuring unit: `mL`, units: `700`
+* `1L` → measuring unit: `L`, units: `1`
+* Products without a recognizable pack size receive blank values for these fields.
+
+## Access limitations and collection method
+
+Direct HTTP requests using Python's `requests` library returned HTTP 403 with a Cloudflare block page.
+
+A headless Playwright browser attempt also received HTTP 403. In contrast, the category pages displayed product cards in a regular Chrome session.
+
+The product data was therefore exported from the rendered category pages in Chrome and saved as:
+
+* `exercise2/page1_products.json`
+* `exercise2/page2_products.json`
+
+The Python script reads these JSON files, combines the records, removes duplicate product IDs, derives pack-size fields, validates the output, and generates the final CSV.
+
+**Important limitation:** Exercise 2 is not currently an unattended end-to-end scraper. Collecting fresh listing data requires the browser-export step. The Python script automates the processing and CSV generation from the saved exports.
+
+## Task 5 — HTTP requests versus browser rendering
+
+### Direct HTTP requests
+
+**Advantages**
+
+* Lower resource usage and generally faster execution.
+* Straightforward to automate and maintain when the website exposes accessible HTML or structured data.
+
+**Observed limitation**
+
+* The category request returned HTTP 403 from Cloudflare, preventing reliable collection through the tested direct-request approach.
+
+### Browser-based extraction
+
+**Advantages**
+
+* A regular Chrome session displayed the product listings and exposed the product-card information needed for extraction.
+* Product fields could be collected from the rendered page and saved as structured JSON.
+
+**Trade-offs**
+
+* A browser generally consumes more memory and processing resources than direct HTTP requests.
+* Browser interaction and export steps add operational effort.
+* Headless Playwright was also blocked in this test, so browser automation was not demonstrated to work reliably.
+
+### Chosen approach and rationale
+
+For this submission, browser-assisted extraction followed by Python-based processing was used because it produced the 57 product records when the tested automated HTTP approaches were blocked.
+
+This is a practical fallback for the observed conditions, not proof that browser rendering is always required or that all browser sessions will succeed.
+
+### What could change the approach?
+
+If the site provided an authorized API, accessible structured data, or a permitted request method, direct HTTP collection could be evaluated again because it is less resource-intensive. If authorized browser automation became reliably accessible, the manual export step could potentially be automated. Any further approach should respect the site's access controls and applicable terms.
+
+---
+
+# AI Assistance Disclosure
+
+AI assistance was used to help with syntax, identify useful functions, troubleshoot discrepancies and errors, debug code, and structure this notes file. AI was also used to help document validation results and compare the tested data-collection approaches.
+
+---
+
+# Project Structure and File Guide
+
+## Exercise 1 — Glossier
+
+* `exercise1/scraper.py` — Scrapes Glossier product data for the selected market (India or US) and generates the corresponding CSV.
+* `output/glossier_products_in.csv` — Glossier India product-variant data.
+* `output/glossier_products_us.csv` — Glossier US product-variant data.
+* `output/glossier_products.csv` — Additional Glossier output file; retained only if it is required by the implementation or represents a useful result.
+
+## Exercise 2 — Cellarbrations Whisky
+
+* `exercise2/scraper.py` — Main processing script. Loads the saved JSON exports, removes duplicate product IDs, derives pack-size fields, validates the data, and generates the final CSV.
+* `exercise2/page1_products.json` — Product records exported from the first category page.
+* `exercise2/page2_products.json` — Product records exported from the second category page.
+* `exercise2/test_site.py` — Test or diagnostic script used to investigate the website's accessibility. Review its contents before deciding whether to retain it.
+* `exercise2/site_response.html` — Saved HTML response used for inspection and troubleshooting. It may contain an access-denied or Cloudflare response rather than the product listing.
+
+## Output and project files
+
+* `output/cellarbrations_whisky.csv` — Final Cellarbrations whisky dataset containing 57 validated product records.
+* `output/glossier_debug.txt` — Debug output from Glossier scraping or troubleshooting; not required for normal execution unless referenced by the code.
+* `check_output.py` — Validation or inspection utility. Review its contents to confirm which output files it expects.
+* `requirements.txt` — Python dependencies required to run the project.
+* `.gitignore` — Specifies files and directories Git should exclude, such as the virtual environment and generated cache files.
+* `README.md` — Project overview and instructions for setup and execution.
+* `notes.txt` — Detailed notes on collection methods, validation results, limitations, Task 5, and AI assistance.
